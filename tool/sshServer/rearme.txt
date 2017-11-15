@@ -1,0 +1,24 @@
+配置ssh步骤
+
+把ssh_ip_list env_setup.sh ssh4slaves.sh上传至第三方机器（能与集群能ping通）/root目录下
+在第三方机器的/etc/hosts文件加入集群的ip和主机名映射，如下所示
+172.18.18.153 s153
+172.18.18.154 s154
+172.18.18.155 s155
+
+1.在ssh_ip_list配置需要配置ssh主机的主机名，一行一个，如下所示
+s153
+
+s154
+
+s155
+
+
+
+
+2.赋予env_setup.sh和ssh4slaves.sh两个脚本有执行权限
+chmod 755 ssh4slaves.sh
+chmod 755 env_setup.sh
+
+3.执行env_setup.sh
+/root/env_setup.sh
