@@ -44,22 +44,14 @@ do
     echo ""  | tee -a $LOG_FILE
     echo "**********************************************" | tee -a $LOG_FILE
     echo "intall expect in  ${name}...... "  | tee -a $LOG_FILE
-    ssh $name "mkdir -p  ${EXPECT_RPM_INSTALL_HOME}"    > /dev/null
+    ssh $name "mkdir -p  ${EXPECT_RPM_INSTALL_HOME}" 
     scp -r  ${EXPECT_RPM_DIR}/* $name:${EXPECT_RPM_INSTALL_HOME}  > /dev/null
     if [ $? == 0 ];then
         echo "scp expect to the ${EXPECT_RPM_INSTALL_HOME} done !!!"  | tee -a $LOG_FILE
     else 
         echo "scp expect to the ${EXPECT_RPM_INSTALL_HOME} failed !!!"  | tee -a $LOG_FILE
     fi
-    ssh root@$name "rpm -ivh ${EXPECT_RPM_INSTALL_HOME}/tcl-8.5.7-6.el6.x86_64.rpm"  
-    ssh root@$name "rpm -ivh ${EXPECT_RPM_INSTALL_HOME}/expect-5.44.1.15-5.el6_4.x86_64.rpm"  
-    expect_home=$(which expect)
-    if [ -n "${expect_home}" ];then
-        echo "install expect in ${name} done!!!" | tee -a $LOG_FILE
-        ssh root@$name "rm -rf ${INSTALL_HOME_BASIC}"
-    else
-        echo "install expect in ${name} failed!!!" | tee -a $LOG_FILE
-    fi
+    ssh root@$name "rpm -ivh ${EXPECT_RPM_INSTALL_HOME}/tcl-8.5.7-6.el6.x86_64.rpm; rpm -ivh ${EXPECT_RPM_INSTALL_HOME}/expect-5.44.1.15-5.el6_4.x86_64.rpm; which expect; rm -rf ${INSTALL_HOME_BASIC}"  
 done
 
 

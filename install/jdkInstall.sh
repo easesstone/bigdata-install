@@ -55,7 +55,15 @@ do
     echo ""  | tee  -a  $LOG_FILE
     echo "************************************************"
     echo "准备将JDK分发到节点$insName："  | tee -a $LOG_FILE
-    ssh root@$insName "mkdir -p  ${JAVA_INSTALL_HOME}"    
+    ssh root@$insName "source /etc/profile; mkdir -p  ${JAVA_INSTALL_HOME};"
+    ssh root@$insName 'mkdir /home/test;
+        cd /home/test;
+        rpm -qa | grep java   > java.tmp;
+        for rpm_pak in $(cat  java.tmp);do
+            echo "删除原先系统java rpm 软件包: ${rpm_pak}"  |  tee  -a  $LOG_FILE;
+            rpm -e --nodeps ${rpm_pak};
+        done
+    '
     echo "jdk 分发中,请稍候......"  | tee -a $LOG_FILE
     rsync -rvl $JDK_SOURCE_DIR/jdk $insName:${JAVA_INSTALL_HOME}   > /dev/null
     ssh root@${insName} "chmod -R 755 ${JAVA_HOME}"  

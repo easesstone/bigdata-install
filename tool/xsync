@@ -1,0 +1,57 @@
+#!/bin/bash
+################################################################################
+## Copyright:   HZGOSUN Tech. Co, BigData
+## Filename:    xsync 
+## Description: 一个同步工具，只同步有差异的文件,【BUG 绝对路径】
+## Version:     1.0
+## Author:      lidiliang
+## Created:     2017-11-25
+################################################################################
+
+#set -x
+
+#---------------------------------------------------------------------#
+#                              定义变量                               #
+#---------------------------------------------------------------------#
+cd `dirname $0`
+## 脚本所在目录
+export BIN_DIR=`pwd`
+cd ..
+## 安装包根目录
+export ROOT_HOME=`pwd`
+## 配置文件目录
+export CONF_DIR=${ROOT_HOME}/conf
+## 安装日记目录
+export LOG_DIR=${ROOT_HOME}/logs
+## 日记文件
+export LOG_FILE=${LOG_DIR}/xcall.log
+## USER
+export USER=$(whoami)
+
+pcount=$#
+if(($pcount<1)) ; then
+  echo "usage:  ./xsync [file|path in this node, 绝对路径] such as : ./xsync /etc/hosts"
+  exit 0
+fi
+
+## FILE or PATH
+export FILE=$1
+export BASE_DIR=$(cd `dirname ${FILE}`;pwd)
+
+#pwd
+
+sync_the_file_to_every_nodes(){
+    for host in $(cat ${CONF_DIR}/hostnamelists.properties);do
+        echo  ""
+        echo "---------------------------------------------------------"
+        echo "$(date "+%Y-%m-%d  %H:%M:%S"), in ${host} the jps show as bellow..."
+        ssh ${USER}@${host} "mkdir -p ${BASE_DIR}"
+        cd  ${BASE_DIR}
+        rsync -rvl   ${FILE} ${USER}@${host}:${BASE_DIR}   
+done
+}
+
+sync_the_file_to_every_nodes
+
+set +x
+
