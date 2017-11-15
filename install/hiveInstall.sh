@@ -6,7 +6,7 @@
 ## Version:      1.0
 ## Hive.Version: 2.3.0 
 ## Author:       qiaokaifeng
-## Created:      2017-10-24
+## Created:      2017-11-14 caodabao
 ################################################################################
 
 #set -x
@@ -54,38 +54,37 @@ else
     echo “解压hive 安装包失败。请检查安装包是否损坏，或者重新安装.”  | tee -a $LOG_FILE
 fi
 
-## hive home目录
-	mkdir -p ${HIVE_INSTALL_HOME}
-    scp -r -q -p ${HIVE_SOURCE_DIR}/hive $(sed -n '1p' ${CONF_DIR}/hostnamelists.properties):${HIVE_INSTALL_HOME}  | tee -a $LOG_FILE
-    chmod -R 755 ${HIVE_HOME}
-    sed -i "s;127.0.0.1;$(sed -n '1p' ${CONF_DIR}/hostnamelists.properties);g" ${HIVE_HOME}/conf/hive-site.xml
-    sed -i "s;INSTALL_HOME;${INSTALL_HOME};g" ${HIVE_HOME}/conf/hive-env.sh
+cp -r ${HIVE_SOURCE_DIR}/hive  ${HIVE_INSTALL_HOME}
+chmod -R 755 ${HIVE_HOME}
+sed -i "s;127.0.0.1;$(sed -n '1p' ${CONF_DIR}/hostnamelists.properties);g" ${HIVE_HOME}/conf/hive-site.xml
+sed -i "s;INSTALL_HOME;${INSTALL_HOME};g" ${HIVE_HOME}/conf/hive-env.sh
 
-## 配置zookeeper集群地址
-hazk=''
+
+## 配置zookeeper、hive matestore集群地址caodabao
+hazk=""
+hith=""
 for insName in $(cat ${CONF_DIR}/hostnamelists.properties)
 do
     hazk="${hazk}${insName}:2181,"
-done
-
-    sed -i "s;hazkadd;${hazk%?};g"  ${HIVE_HOME}/conf/hive-site.xml
-    
-
-## 配置hive matestore集群地址
-hith=''
-for insName in $(cat ${CONF_DIR}/hostnamelists.properties)
-do
     hith="${hith}thrift://${insName}:9083,"
 done
-    sed -i "s;hithadd;${hith%?};g"  ${HIVE_HOME}/conf/hive-site.xml
-	sleep 2s
-    rsync -rvl ${HIVE_HOME} $(sed -n '2p' ${CONF_DIR}/hostnamelists.properties):${HIVE_INSTALL_HOME}  > /dev/null
-	sleep 2s
-	ssh root@$(sed -n '2p' ${CONF_DIR}/hostnamelists.properties) "chmod -R 755 ${HIVE_HOME}"
-	sleep 2s
-    rsync -rvl ${HIVE_HOME} $(sed -n '3p' ${CONF_DIR}/hostnamelists.properties):${HIVE_INSTALL_HOME}  > /dev/null
-	sleep 2s
-    ssh root@$(sed -n '3p' ${CONF_DIR}/hostnamelists.properties) "chmod -R 755 ${HIVE_HOME}"
+sed -i "s;hazkadd;${hazk%?};g"  ${HIVE_HOME}/conf/hive-site.xml
+sed -i "s;hithadd;${hith%?};g"  ${HIVE_HOME}/conf/hive-site.xml
+    
+
+## HIVE配置文件分发caodabao
+
+echo ""  | tee -a $LOG_FILE
+echo "**********************************************" | tee -a $LOG_FILE
+echo "hive 配置文件分发中，please waiting......"    | tee -a $LOG_FILE
+for hostname in $(cat ${CONF_DIR}/hostnamelists.properties)
+do
+    ssh root@${hostname}  "mkdir -p ${HIVE_INSTALL_HOME}"  
+    rsync -rvl ${HIVE_HOME}   root@${hostname}:${HIVE_INSTALL_HOME}  >/dev/null
+    ssh root@${hostname}  "chmod -R 755   ${HIVE_HOME}"
+done 
+echo “分发hive 安装配置done...”  | tee -a $LOG_FILE  
+	
 	
 ## 修改hiveserver2 UI地址
 for insName in $(cat ${CONF_DIR}/hostnamelists.properties)
@@ -94,8 +93,7 @@ do
     echo ""  | tee  -a  $LOG_FILE
     echo "==================================================="  | tee -a $LOG_FILE
     echo "修改hiveserver2 UI地址 in {$insName}目录...... "  | tee -a $LOG_FILE
-    ssh root@$insName "sed -i 's;hostname;$insName;g' ${HIVE_HOME}/conf/hive-site.xml"
-	
+    ssh root@$insName "sed -i 's;hostname;$insName;g' ${HIVE_HOME}/conf/hive-site.xml"	
 done
-    echo "hive 文件分发完成，安装完成......"  | tee  -a  $LOG_FILE
+echo "hive 文件分发完成，安装完成......"  | tee  -a  $LOG_FILE
 set +x
