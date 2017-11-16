@@ -43,9 +43,7 @@ echo "==================================================="  | tee -a $LOG_FILE
 echo "$(date "+%Y-%m-%d  %H:%M:%S")"                       | tee  -a  $LOG_FILE
 
 ## 解压zookeeper安装包
-echo ""  | tee  -a  $LOG_FILE
-echo ""  | tee  -a  $LOG_FILE
-echo "==================================================="  | tee -a $LOG_FILE
+echo "**************************************************"  | tee -a $LOG_FILE
 echo “解压zookeeper tar 包中，请稍候.......”  | tee -a $LOG_FILE
 tar -xf ${ZOOKEEPER_SOURCE_DIR}/zookeeper.tar.gz -C ${ZOOKEEPER_SOURCE_DIR}
 if [ $? == 0 ];then
@@ -54,48 +52,44 @@ else
     echo “解压zookeeper 安装包失败。请检查安装包是否损坏，或者重新安装.”  | tee -a $LOG_FILE
 fi
 
+
+## 流程，先配置好各个节点所需要的安装的内容。
 ## 临时目录
 i=0
 
+echo "" | tee -a  $LOG_FILE
 for insName in $(cat ${CONF_DIR}/hostnamelists.properties)
 do
-    echo ""  | tee  -a  $LOG_FILE
-    echo ""  | tee  -a  $LOG_FILE
-    echo "==================================================="  | tee -a $LOG_FILE
-    echo "创建临时安装目录${insName}，请稍等...... "  | tee -a $LOG_FILE
-    mkdir ${ZOOKEEPER_SOURCE_DIR}/$insName
-    sleep 2s
-    echo "正在拷贝安装包到${insName}临时安装目录,请稍等......"  | tee -a $LOG_FILE
+    echo "***********************************************************"  | tee -a $LOG_FILE
+    echo "创建${insName}的临时安装目录${insName} "  | tee -a $LOG_FILE
+    mkdir -p  ${ZOOKEEPER_SOURCE_DIR}/$insName
+    echo "拷贝安装包到${insName}临时安装目录"  | tee -a $LOG_FILE
     cp -R ${ZOOKEEPER_SOURCE_DIR}/zookeeper ${ZOOKEEPER_SOURCE_DIR}/$insName
-    i=$(($i+1))
-    echo "server.${i}=${insName}:2888:3888" >> ${ZOOKEEPER_SOURCE_DIR}/$1/zookeeper/conf/zoo.cfg
-    echo "$i" >> ${ZOOKEEPER_SOURCE_DIR}/$insName/zookeeper/data/myid
-    sleep 2s
-    echo ""  | tee  -a  $LOG_FILE
-    echo ""  | tee  -a  $LOG_FILE
-    echo "==================================================="  | tee -a $LOG_FILE
-    echo "修改zookeeper logs目录 in ${insName}目录，请稍等...... "  | tee -a $LOG_FILE
+    let i++
+    echo "server.${i}=${insName}:2888:3888" >> ${ZOOKEEPER_SOURCE_DIR}/zookeeper/conf/zoo.cfg
+    echo "$i" > ${ZOOKEEPER_SOURCE_DIR}/$insName/zookeeper/data/myid
+    echo "修改 ${insName} 的zookeeper logs目录 "  | tee -a $LOG_FILE
     sed -i "s;zookeeper_logs;${ZOOKEEPER_HOME};g"  ${ZOOKEEPER_SOURCE_DIR}/$insName/zookeeper/bin/zkEnv.sh
 done
 
-## 临时分发配置文件
-
+echo "" | tee -a  $LOG_FILE
+## 分发zoo.cfg，分布式所需要的zoo.cfg
 for insName in $(cat ${CONF_DIR}/hostnamelists.properties)
 do
-    echo ""  | tee  -a  $LOG_FILE
-    echo ""  | tee  -a  $LOG_FILE
-    echo "==================================================="  | tee -a $LOG_FILE
+    echo "***************************************************"  | tee -a $LOG_FILE
     echo "临时分发配置文件到 {$insName}目录...... "  | tee -a $LOG_FILE
-    yes|cp ${ZOOKEEPER_SOURCE_DIR}/$1/zookeeper/conf/zoo.cfg ${ZOOKEEPER_SOURCE_DIR}/$insName/zookeeper/conf/
+    yes|cp ${ZOOKEEPER_SOURCE_DIR}/zookeeper/conf/zoo.cfg ${ZOOKEEPER_SOURCE_DIR}/$insName/zookeeper/conf/
+    echo "修改 ${insName} 的zookeeper data目录 "  | tee -a $LOG_FILE
+    sed -i "s;zookeeper;${ZOOKEEPER_HOME};g" ${ZOOKEEPER_SOURCE_DIR}/$insName/zookeeper/conf/zoo.cfg
 done
 
+echo "" | tee -a  $LOG_FILE
 ## 分发zookeeper到每个节点
 for insName in $(cat ${CONF_DIR}/hostnamelists.properties)
 do
-    echo ""  | tee -a $LOG_FILE
     echo "**********************************************" | tee -a $LOG_FILE
     echo "准备将zookeeper分发到节点$insName："  | tee -a $LOG_FILE
-    ssh $insName "mkdir -p  ${ZOOKEEPER_INSTALL_HOME}"    > /dev/null
+    ssh $insName "rm -rf  ${ZOOKEEPER_INSTALL_HOME};mkdir -p  ${ZOOKEEPER_INSTALL_HOME}"    > /dev/null
     rsync -rvl  ${ZOOKEEPER_SOURCE_DIR}/$insName/ $insName:${ZOOKEEPER_INSTALL_HOME}  > /dev/null
     zookeeper_x=$(chmod -R 755 ${ZOOKEEPER_HOME})
     echo "ssh root@$insName ${zookeeper_x}"    | tee -a $LOG_FILE
@@ -106,22 +100,14 @@ do
     fi
 done
 
-## 修改zookeeper data目录
-    echo ""  | tee  -a  $LOG_FILE
-    echo ""  | tee  -a  $LOG_FILE
-    echo "==================================================="  | tee -a $LOG_FILE
-    echo "修改zookeeper data目录 ，请稍等...... "  | tee -a $LOG_FILE
-    sed -i "s;zookeeper;${ZOOKEEPER_HOME};g" ${ZOOKEEPER_HOME}/conf/zoo.cfg
-    scp -r ${ZOOKEEPER_HOME}/conf/zoo.cfg root@$(sed -n '2p' ${CONF_DIR}/hostnamelists.properties):${ZOOKEEPER_HOME}/conf/
-    scp -r ${ZOOKEEPER_HOME}/conf/zoo.cfg root@$(sed -n '3p' ${CONF_DIR}/hostnamelists.properties):${ZOOKEEPER_HOME}/conf/
-
+echo "" | tee -a  $LOG_FILE
 ## 删除临时目录
 for insName in $(cat ${CONF_DIR}/hostnamelists.properties)
 do
-    echo ""  | tee -a $LOG_FILE
     echo "**********************************************" | tee -a $LOG_FILE
     echo "删除临时目录${insName}...... "  | tee -a $LOG_FILE
     rm -rf ${ZOOKEEPER_SOURCE_DIR}/$insName
+    rm -rf ${ZOOKEEPER_SOURCE_DIR}/zookeeper
 done
 
 set +x
