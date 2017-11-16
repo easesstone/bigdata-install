@@ -3,6 +3,7 @@
 ## Copyright:   HZGOSUN Tech. Co, BigData
 ## Filename:    hbaseStart.sh
 ## Description: 启动hbase集群的脚本.
+##             (默认在hostnamelists.properties第二行的节点上启动Hbase高可用的HMaster)
 ## Version:     1.0
 ## Author:      qiaokaifeng
 ## Created:     2017-10-24
