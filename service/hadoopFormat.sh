@@ -34,20 +34,41 @@ do
 done
 
 
+
+sleep 5s
+
 ${INSTALL_HOME}/Hadoop/hadoop/bin/hdfs zkfc -formatZK  -force
+if [ $? -ne 0 ];then
+    echo "hdfs zkfc -formatZK 失败."
+    exit 1;
+fi
+
 sleep 2s
 cd  ${INSTALL_HOME}/Hadoop/hadoop/sbin
 ./hadoop-daemon.sh start zkfc 
 sleep 2s
 
+source /etc/profile;
+xcall jps
 
 for name in $(cat ${CONF_DIR}/hostnamelists.properties)
 do
     ssh root@$name "${INSTALL_HOME}/Hadoop/hadoop/sbin/hadoop-daemon.sh start journalnode"
+    if [ $? -ne 0 ];then
+        echo  "start journalnode in $name failed"
+        exit 1 
+    fi
 done
 
+sleep 2s
 # 格式化namenode
-${INSTALL_HOME}/Hadoop/hadoop/bin/hdfs namenode -format -force
+${INSTALL_HOME}/Hadoop/hadoop/bin/hadoop namenode -format -force
+## 
+if [ $? -ne 0 ];then
+    echo "hdfs namenode -formate -force 失败."
+    exit 1;
+fi
+
 sleep 2s
 
 ## 第一次启动

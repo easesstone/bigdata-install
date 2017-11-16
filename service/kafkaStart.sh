@@ -30,11 +30,5 @@ for name in $(cat ${CONF_DIR}/hostnamelists.properties)
 do       
         ssh root@$name "mkdir -p  ${INSTALL_HOME}/Kafka/kafka/kafka-logs"
         ssh root@$name "touch  ${INSTALL_HOME}/Kafka/kafka/kafka-logs/kafka-server.log"
-	ssh root@$name "${INSTALL_HOME}/Kafka/kafka/bin/kafka-server-start.sh ${INSTALL_HOME}/Kafka/kafka/config/server.properties >>${INSTALL_HOME}/Kafka/kafka/kafka-logs/kafka-server.log 2>&1 &"
-	if [ $? -eq 0 ];then
-	    echo -e 'kafka startsuccess \n'
-	else 
-	    echo -e 'kafka startfailed \n'
-	fi
-
+	ssh root@$name "source /etc/profile;nohup ${INSTALL_HOME}/Kafka/kafka/bin/kafka-server-start.sh ${INSTALL_HOME}/Kafka/kafka/config/server.properties >>${INSTALL_HOME}/Kafka/kafka/kafka-logs/kafka-server.log 2>&1 &"
 done

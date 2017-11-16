@@ -9,7 +9,7 @@
 ## Created:     2017-10-23
 ################################################################################
 
-#set -x
+set -x
 
 cd `dirname $0`
 ## 脚本所在目录
@@ -81,7 +81,7 @@ function compression_the_tar()
        echo "解压hadoop jar 包失败，请检查包是否完整。" | tee -a $LOG_FILE  
     fi
     rm -rf ${HADOOP_HOME}
-    cp -r hadoop  ${HADOOP_INSTALL_HOME}
+    #cp -r hadoop  ${HADOOP_INSTALL_HOME}
     cd -  
 }
 
@@ -98,7 +98,7 @@ function config_jdk_and_slaves()
 {
     echo ""  | tee -a $LOG_FILE
     echo "**********************************************" | tee -a $LOG_FILE
-    cd $HADOOP_HOME/etc/hadoop
+    cd ${HADOOP_SOURCE_DIR}/hadoop/etc/hadoop
     sed -i "s#java_home#${JAVA_HOME}#g" yarn-env.sh
     flag1=$?
     sed -i "s#java_home#${JAVA_HOME}#g" hadoop-env.sh
@@ -108,7 +108,7 @@ function config_jdk_and_slaves()
     else
         echo "配置jdk路径成功." | tee -a $LOG_FILE
     fi
-    cat ${CONF_DIR}/hostnamelists.properties  >  ${HADOOP_HOME}/etc/hadoop/slaves
+    cat ${CONF_DIR}/hostnamelists.properties  >  ${HADOOP_SOURCE_DIR}/hadoop/etc/hadoop/slaves
     cd -
 }
 
@@ -124,8 +124,9 @@ function config_core_site()
 {
     echo ""  | tee -a $LOG_FILE
     echo "**********************************************" | tee -a $LOG_FILE
-    cd $HADOOP_HOME/etc/hadoop
-    mkdir -p ${HADOOP_TMP_DIR}
+    cd ${HADOOP_SOURCE_DIR}/hadoop/etc/hadoop
+    mkdir -p ${HADOOP_SOURCE_DIR}/hadoop/tmp/dfs/name
+    mkdir -p ${HADOOP_SOURCE_DIR}/hadoop/tmp/dfs/data
     sed -i "s#hadoop_tmp_dir#${HADOOP_TMP_DIR}#g" core-site.xml
     sed -i "s#ha_zookeeper_quorum#${ZK_LISTS}#g" core-site.xml    
     echo “配置core-site.xml 的配置done”  | tee -a $LOG_FILE
@@ -144,11 +145,11 @@ function config_hdfs_site()
 {
     echo ""  | tee -a $LOG_FILE
     echo "**********************************************" | tee -a $LOG_FILE
-    cd $HADOOP_HOME/etc/hadoop
+    cd ${HADOOP_SOURCE_DIR}/hadoop/etc/hadoop
     sed -i "s#master1#${MASTER1}#g" hdfs-site.xml
     sed -i "s#master2#${MASTER2}#g" hdfs-site.xml
     sed -i "s#DKslave#${DK_SLAVES}#g" hdfs-site.xml 
-    mkdir -p $DFS_JOURNALNODE_EDITS_DIR
+    mkdir -p ${HADOOP_SOURCE_DIR}/hadop/dfs_journalnode_edits_dir
     sed -i "s#dfs_journalnode_edits_dir#${DFS_JOURNALNODE_EDITS_DIR}#g" hdfs-site.xml 
     echo “配置hdfs-site.xml 的配置done”  | tee -a $LOG_FILE
     cd -
@@ -165,7 +166,7 @@ function config_yarn_site()
 {
     echo ""  | tee -a $LOG_FILE
     echo "**********************************************" | tee -a $LOG_FILE
-    cd $HADOOP_HOME/etc/hadoop
+    cd  ${HADOOP_SOURCE_DIR}/hadoop/etc/hadoop
     sed -i "s#master1#${MASTER1}#g"  yarn-site.xml
     sed -i "s#master2#${MASTER2}#g"  yarn-site.xml
     sed -i "s#ha_zookeeper_quorum#${ZK_LISTS}#g"  yarn-site.xml
@@ -188,10 +189,11 @@ function xync_hadoop_config()
     echo "**********************************************" | tee -a $LOG_FILE
     echo "hadoop 配置文件分发中，please waiting......"    | tee -a $LOG_FILE
     for hostname in $(cat ${CONF_DIR}/hostnamelists.properties);do
-        ssh root@${hostname}  "mkdir -p ${HADOOP_INSTALL_HOME}"  
-        rsync -rvl ${HADOOP_HOME}   root@${hostname}:${HADOOP_INSTALL_HOME}  >/dev/null
+        ssh root@${hostname}  "rm -rf ${HADOOP_HOME}"  
+        rsync -rvl ${HADOOP_SOURCE_DIR}/hadoop   root@${hostname}:${HADOOP_INSTALL_HOME}  >/dev/null
         ssh root@${hostname}  "chmod -R 755   ${HADOOP_HOME}"
     done 
+    rm -rf  ${HADOOP_SOURCE_DIR}/hadoop
     echo “分发haoop 安装配置done...”  | tee -a $LOG_FILE  
 }
 

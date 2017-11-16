@@ -43,8 +43,6 @@ echo "==================================================="  | tee -a $LOG_FILE
 echo "$(date "+%Y-%m-%d  %H:%M:%S")"                       | tee  -a  $LOG_FILE
 
 ## 解压hive安装包
-echo ""  | tee  -a  $LOG_FILE
-echo ""  | tee  -a  $LOG_FILE
 echo "==================================================="  | tee -a $LOG_FILE
 echo “解压hive tar 包中，请稍候.......”  | tee -a $LOG_FILE
 tar -xf ${HIVE_SOURCE_DIR}/hive.tar.gz -C ${HIVE_SOURCE_DIR}
@@ -54,7 +52,9 @@ else
     echo “解压hive 安装包失败。请检查安装包是否损坏，或者重新安装.”  | tee -a $LOG_FILE
 fi
 
-cp -r ${HIVE_SOURCE_DIR}/hive  ${HIVE_INSTALL_HOME}
+rm -rf  ${HIVE_INSTALL_HOME}
+mkdir -p ${HIVE_INSTALL_HOME}
+yes |cp -r ${HIVE_SOURCE_DIR}/hive  ${HIVE_INSTALL_HOME}
 chmod -R 755 ${HIVE_HOME}
 sed -i "s;127.0.0.1;$(sed -n '1p' ${CONF_DIR}/hostnamelists.properties);g" ${HIVE_HOME}/conf/hive-site.xml
 sed -i "s;INSTALL_HOME;${INSTALL_HOME};g" ${HIVE_HOME}/conf/hive-env.sh
@@ -68,22 +68,22 @@ do
     hazk="${hazk}${insName}:2181,"
     hith="${hith}thrift://${insName}:9083,"
 done
-sed -i "s;hazkadd;${hazk%?};g"  ${HIVE_HOME}/conf/hive-site.xml
-sed -i "s;hithadd;${hith%?};g"  ${HIVE_HOME}/conf/hive-site.xml
+    sed -i "s;hazkadd;${hazk%?};g"  ${HIVE_HOME}/conf/hive-site.xml
+    sed -i "s;hithadd;${hith%?};g"  ${HIVE_HOME}/conf/hive-site.xml
     
 
 ## HIVE配置文件分发caodabao
 
 echo ""  | tee -a $LOG_FILE
-echo "**********************************************" | tee -a $LOG_FILE
-echo "hive 配置文件分发中，please waiting......"    | tee -a $LOG_FILE
+    echo "**********************************************" | tee -a $LOG_FILE
+    echo "hive 配置文件分发中，please waiting......"    | tee -a $LOG_FILE
 for hostname in $(cat ${CONF_DIR}/hostnamelists.properties)
 do
     ssh root@${hostname}  "mkdir -p ${HIVE_INSTALL_HOME}"  
     rsync -rvl ${HIVE_HOME}   root@${hostname}:${HIVE_INSTALL_HOME}  >/dev/null
     ssh root@${hostname}  "chmod -R 755   ${HIVE_HOME}"
 done 
-echo “分发hive 安装配置done...”  | tee -a $LOG_FILE  
+    echo “分发hive 安装配置done...”  | tee -a $LOG_FILE  
 	
 	
 ## 修改hiveserver2 UI地址
@@ -93,7 +93,8 @@ do
     echo ""  | tee  -a  $LOG_FILE
     echo "==================================================="  | tee -a $LOG_FILE
     echo "修改hiveserver2 UI地址 in {$insName}目录...... "  | tee -a $LOG_FILE
-    ssh root@$insName "sed -i 's;hostname;$insName;g' ${HIVE_HOME}/conf/hive-site.xml"	
+    ssh root@$insName "sed -i 's;hostname;$insName;g' ${HIVE_HOME}/conf/hive-site.xml"
+	
 done
-echo "hive 文件分发完成，安装完成......"  | tee  -a  $LOG_FILE
+    echo "hive 文件分发完成，安装完成......"  | tee  -a  $LOG_FILE
 set +x
