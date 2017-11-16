@@ -37,7 +37,7 @@ command_do_in_all_nodes(){
     for host in $(cat ${CONF_DIR}/hostnamelists.properties);do
         echo  ""
         echo "---------------------------------------------------------"
-        echo "$(date "+%Y-%m-%d  %H:%M:%S"), in ${host} the jps show as bellow..."
+        echo "$(date "+%Y-%m-%d  %H:%M:%S"), in ${host} doing  $@ show as bellow..."
         ssh ${host} "source /etc/profile;$@"
     done
 }
